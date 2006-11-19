@@ -13,7 +13,10 @@ from pyparsing import Literal, Word, ZeroOrMore, Group, Dict, Optional, \
         printables, ParseException, restOfLine
 from getopt import getopt, GetoptError
 
-conf = os.path.join(os.getenv("HOME"), ".bitfields.conf")
+# List of paths to look for configuration files. If a directory is specified,
+# it will be (recursively) scanned for .conf files.
+configs = [os.path.join(os.getenv("HOME"), ".bitfields.conf"),
+		os.path.join(os.getenv("HOME"), ".bitfields.d")]
 
 class bitfield:
 	def __init__(self, start_bit, end_bit, name):
@@ -114,32 +117,18 @@ class ConfigurationError(Exception):
 		self.file = file
 		self.message = message
 
-def parse_config(file):
-	lbrack = Literal("[").suppress()
-	rbrack = Literal("]").suppress()
-	colon  = Literal(":").suppress()
-	semi   = Literal(";")
-
-	comment = semi + Optional( restOfLine )
-
-	nonrbrack = "".join( [ c for c in printables if c != "]" ] ) + " \t"
-	nonequals = "".join( [ c for c in printables if c != ":" ] ) + " \t"
-
-	sectionDef = lbrack + Word( nonrbrack ) + rbrack
-	keyDef = ~lbrack + Word( nonequals ) + colon + restOfLine
-
-	bnf = Dict(ZeroOrMore(Group(sectionDef + ZeroOrMore(Group(keyDef)))))
-	bnf.ignore(comment)
-
+def parse_config(bnf, regs, file):
 	f = open(file)
 
 	tokens = bnf.parseString("".join(f.readlines()))
 
-	regs = {}
-
 	for tok in tokens:
 		ts = tok.asList()
 		id = ts.pop(0)
+
+		if regs.has_key(id):
+			raise ConfigurationError(file,
+				"Register %s is already defined" % id)
 
 		# default to 64 bit registers
 		width = 64
@@ -159,19 +148,19 @@ def parse_config(file):
 						"Invalid field in %s" % id)
 				fields.append(f)
 			elif t[0] == 'value':
-				f = fields[-1]
-				if f is None:
+				if len(fields) == 0:
 					raise ConfigurationError(file,
 						"No field for value in %s" % id)
 				v = bitfield.parse_value(t[1])
 				if v is None:
 					raise ConfigurationError(file,
 						"Invalid value in %s" % id)
-				f.add_value(v[0], v[1])
+
+				fields[-1].add_value(v[0], v[1])
 
 		if name is None or name == '':
 			raise ConfigurationError(file,
-				"No name for entry %s" %id)
+				"No name for entry %s" % id)
 
 		if len(fields) == 0:
 			raise ConfigurationError(file,
@@ -183,8 +172,48 @@ def parse_config(file):
 
 		regs[id] = r
 
-	return regs
+def parse_config_dir(data, dir, fnames):
+	(bnf, regs) = data
+	for fname in fnames:
+		full_fname = os.path.join(dir, fname)
 
+		if os.path.isdir(full_fname):
+			continue
+
+		if fname.endswith('.conf'):
+			parse_config(bnf, regs, full_fname)
+
+def parse_all_configs(configs):
+	regs = {}
+
+	# set up the bnf to be used for each file
+	lbrack = Literal("[").suppress()
+	rbrack = Literal("]").suppress()
+	colon  = Literal(":").suppress()
+	semi   = Literal(";")
+
+	comment = semi + Optional(restOfLine)
+
+	nonrbrack = "".join([c for c in printables if c != "]"]) + " \t"
+	noncolon  = "".join([c for c in printables if c != ":"]) + " \t"
+
+	sectionDef = lbrack + Word(nonrbrack) + rbrack
+	keyDef = ~lbrack + Word(noncolon) + colon + restOfLine
+
+	bnf = Dict(ZeroOrMore(Group(sectionDef + ZeroOrMore(Group(keyDef)))))
+	bnf.ignore(comment)
+
+	# bundle into a single var that can be passed to os.path.walk
+	conf_data = (bnf, regs)
+
+	for conf in configs:
+		if not os.path.exists(conf):
+			continue
+		if os.path.isdir(conf):
+			os.path.walk(conf, parse_config_dir, conf_data)
+		else:
+			parse_config(bnf, regs, conf)
+	return regs
 
 def usage(prog):
 	print "Usage: %s <-l> | <-s pattern> | register [value...]" % prog
@@ -198,11 +227,14 @@ def main():
 		return 1
 
 	try:
-		regs = parse_config(conf)
-
+		regs = parse_all_configs(configs)
 	except ConfigurationError, e:
 		print "Error parsing configuration file %s:\n\t%s" % \
 			(e.file, e.message)
+		return 1
+
+	if regs == {}:
+		print "No configuration available"
 		return 1
 
 	for o, a in opts:
