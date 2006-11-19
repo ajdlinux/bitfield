@@ -71,7 +71,8 @@ class bitfield:
 		return a
 
 class register:
-	def __init__(self, name, width):
+	def __init__(self, id, name, width):
+		self.id = id
 		self.name = name
 		self.width = width
 		self.fields = []
@@ -158,7 +159,7 @@ def parse_config(bnf, regs, file):
 			raise ConfigurationError(file,
 				"Register %s has no fields" % id)
 
-		r = register(name, width)
+		r = register(id, name, width)
 		for f in fields:
 			r.add_field(f)
 
@@ -209,6 +210,21 @@ def parse_all_configs(configs):
 
 def usage(prog):
 	print "Usage: %s <-l> | <-s pattern> | [-n] register [value...]" % prog
+
+def decode_value(reg, value, options):
+	try:
+		i = long(value, 0)
+	except ValueError, e:
+		print "error: invalid value '%s'" % value
+		return
+
+	if i > ((1 << reg.width) - 1):
+		print ("error: value '%s' is too large " + \
+			"for %d-bit register '%s'") % (value, reg.width, reg.id)
+		return
+
+	print reg.decode(i, options.has_key('non_zero'))
+
 
 def main():
 	try:
@@ -269,8 +285,7 @@ def main():
 			return
 
 	for value in values:
-		i = long(value.strip(), 0)
-		print r.decode(i, options['non-zero'])
+		decode_value(r, value.strip(), options)
 
 	return 0
 
