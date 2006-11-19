@@ -257,8 +257,7 @@ def main():
 
 	reg_id = args.pop(0)
 	if not regs.has_key(reg_id):
-		print "No such register '%s'. Valid regs are:" % reg_id
-		list_regs(regs)
+		print "No such register '%s'" % reg_id
 		return 1
 
 	r = regs[reg_id]
