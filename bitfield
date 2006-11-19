@@ -255,13 +255,13 @@ def main():
 		usage(sys.argv[0])
 		return 1
 
-	a = args.pop(0)
-	if not regs.has_key(a):
-		print "No such register '%s'. Valid regs are:" % a
+	reg_id = args.pop(0)
+	if not regs.has_key(reg_id):
+		print "No such register '%s'. Valid regs are:" % reg_id
 		list_regs(regs)
 		return 1
 
-	r = regs[a]
+	r = regs[reg_id]
 	print "decoding as %s" % r.name
 
 	if args:
