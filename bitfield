@@ -79,12 +79,14 @@ class register:
 	def add_field(self, field,):
 		self.fields.append(field)
 
-	def decode(self, value):
+	def decode(self, value, ignore_zero):
 		field_width = (self.width + 3) / 4
 		name_width = max(map(lambda f: len(f.name), self.fields))
 		str = "0x%0*lx [%d]\n" % (field_width, value, value)
 		for field in self.fields:
 			v = field.mask(self.width, value);
+			if ignore_zero and v == 0:
+				continue
 			desc = field.value(v)
 			if desc is not None:
 				str += "%*s: 0x%s [%s]\n" \
@@ -210,8 +212,8 @@ def usage(prog):
 
 def main():
 	try:
-		(opts, args) = getopt(sys.argv[1:], "hls:", \
-			["help", "list", "search="])
+		(opts, args) = getopt(sys.argv[1:], "hlns:", \
+			["help", "list", "non-zero", "search="])
 	except GetoptError:
 		usage(sys.argv[0])
 		return 1
@@ -227,6 +229,9 @@ def main():
 		print "No configuration available"
 		return 1
 
+	options = {}
+	options['non-zero'] = False
+
 	for o, a in opts:
 		if o in ("-h", "--help"):
 			usage(sys.argv[0])
@@ -240,6 +245,8 @@ def main():
 			list_regs(search_regs(regs, a))
 			return
 
+		if o in ("-n", "--non-zero"):
+			options['non-zero'] = True
 
 	if not args:
 		usage(sys.argv[0])
@@ -263,7 +270,7 @@ def main():
 
 	for value in values:
 		i = long(value.strip(), 0)
-		print r.decode(i)
+		print r.decode(i, options['non-zero'])
 
 	return 0
 
