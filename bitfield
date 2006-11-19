@@ -275,19 +275,19 @@ def main():
 		print "No such register '%s'" % reg_id
 		return 1
 
-	r = regs[reg_id]
-	print "decoding as %s" % r.name
+	reg = regs[reg_id]
+	print "decoding as %s" % reg.name
 
 	if args:
-		values = args
+		value_iter = args.__iter__()
 	else:
-		try:
-			values = sys.stdin.readlines()
-		except KeyboardInterrupt, e:
-			return
-
-	for value in values:
-		decode_value(r, value.strip(), options)
+		value_iter = iter(sys.stdin.readline, '')
+		
+	try:
+		for value in value_iter:
+			decode_value(reg, value.strip(), options)
+	except KeyboardInterrupt, e:
+		pass
 
 	return 0
 
