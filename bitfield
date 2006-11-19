@@ -1,0 +1,250 @@
+#!/usr/bin/python2.4
+#
+# Utility to decode register values
+# Copyright (c) 2006 Jeremy Kerr <jk@ozlabs.org>
+# Released under the GNU General Public License version 2 or later
+#
+# Documentation and updates at: http://ozlabs.org/~jk/code/bitfield
+
+import os
+import sys
+import pprint
+from pyparsing import Literal, Word, ZeroOrMore, Group, Dict, Optional, \
+        printables, ParseException, restOfLine
+from getopt import getopt, GetoptError
+
+conf = os.path.join(os.getenv("HOME"), ".bitfields.conf")
+
+class bitfield:
+	def __init__(self, start_bit, end_bit, name):
+		self.start_bit = start_bit
+		self.end_bit = end_bit
+		self.name = name
+		self.values = {}
+
+	def start_bit(self):
+		return self.start_bit
+
+	def end_bit(self):
+		return self.end_bit
+
+	def width(self):
+		return 1 + self.end_bit - self.start_bit
+
+	def add_value(self, value, description):
+		self.values[int(value)] = description
+
+	def mask(self, reg_width, value):
+		shift = (reg_width - 1) - self.end_bit
+		return (((2 ** self.width() - 1) << (shift))
+			& value) >> shift
+
+	def value(self, value):
+		if value in self.values:
+			return self.values[value]
+		return None
+
+	def __str__(self):
+		return "[%2d:%-2d] %s 0x%x" % (int(self.start_bit),
+			int(self.end_bit), self.name, self.mask())
+
+	@staticmethod
+	def parse_bitfield(line):
+		a = line.split(None, 1)
+		if len(a) != 2:
+			return None
+		(range_str, name) = a
+
+		range = (None,None)
+		if range_str.find(':') != -1:
+			r = range_str.split(":")
+			range = (int(r[0]),int(r[1]))
+		else:
+			range = (int(range_str),int(range_str))
+
+		return bitfield(range[0], range[1], name)
+
+	@staticmethod
+	def parse_value(line):
+		a = line.split(None, 1)
+		if len(a) != 2:
+			return None
+		return a
+
+class register:
+	def __init__(self, name, width):
+		self.name = name
+		self.width = width
+		self.fields = []
+
+	def add_field(self, field,):
+		self.fields.append(field)
+
+	def decode(self, value):
+		field_width = (self.width + 3) / 4
+		name_width = max(map(lambda f: len(f.name), self.fields))
+		str = "0x%0*lx [%d]\n" % (field_width, value, value)
+		for field in self.fields:
+			v = field.mask(self.width, value);
+			desc = field.value(v)
+			if desc is not None:
+				str += "%*s: 0x%s [%s]\n" \
+					% (name_width, field.name, v, desc)
+			else:
+				str += "%*s: 0x%x\n" \
+					% (name_width, field.name, v)
+		return str
+
+	def __str__(self):
+		str = self.name + "\n"
+		for f in self.fields:
+			str += "\t%s\n" % f
+		return str
+
+def list_regs(regs):
+	for (id, r) in regs.iteritems():
+		print "%18s : %s" % (id, r.name)
+
+def search_regs(regs, str):
+	return dict((k, regs[k]) for k in regs \
+			if str.lower() in regs[k].name.lower() + k.lower())
+
+class ConfigurationError(Exception):
+	def __init__(self, file, message):
+		self.file = file
+		self.message = message
+
+def parse_config(file):
+	lbrack = Literal("[").suppress()
+	rbrack = Literal("]").suppress()
+	colon  = Literal(":").suppress()
+	semi   = Literal(";")
+
+	comment = semi + Optional( restOfLine )
+
+	nonrbrack = "".join( [ c for c in printables if c != "]" ] ) + " \t"
+	nonequals = "".join( [ c for c in printables if c != ":" ] ) + " \t"
+
+	sectionDef = lbrack + Word( nonrbrack ) + rbrack
+	keyDef = ~lbrack + Word( nonequals ) + colon + restOfLine
+
+	bnf = Dict(ZeroOrMore(Group(sectionDef + ZeroOrMore(Group(keyDef)))))
+	bnf.ignore(comment)
+
+	f = open(file)
+
+	tokens = bnf.parseString("".join(f.readlines()))
+
+	regs = {}
+
+	for tok in tokens:
+		ts = tok.asList()
+		id = ts.pop(0)
+
+		# default to 64 bit registers
+		width = 64
+		name = None
+		fields = []
+
+		for t in ts:
+			if t[0] == 'name':
+				name = t[1]
+				name = name.strip()
+			elif t[0] == 'width':
+				width = int(t[1])
+			elif t[0] == 'field':
+				f = bitfield.parse_bitfield(t[1])
+				if f is None:
+					raise ConfigurationError(file,
+						"Invalid field in %s" % id)
+				fields.append(f)
+			elif t[0] == 'value':
+				f = fields[-1]
+				if f is None:
+					raise ConfigurationError(file,
+						"No field for value in %s" % id)
+				v = bitfield.parse_value(t[1])
+				if v is None:
+					raise ConfigurationError(file,
+						"Invalid value in %s" % id)
+				f.add_value(v[0], v[1])
+
+		if name is None or name == '':
+			raise ConfigurationError(file,
+				"No name for entry %s" %id)
+
+		if len(fields) == 0:
+			raise ConfigurationError(file,
+				"Register %s has no fields" % id)
+
+		r = register(name, width)
+		for f in fields:
+			r.add_field(f)
+
+		regs[id] = r
+
+	return regs
+
+
+def usage(prog):
+	print "Usage: %s <-l> | <-s pattern> | register [value...]" % prog
+
+def main():
+	try:
+		(opts, args) = getopt(sys.argv[1:], "hls:", \
+			["help", "list", "search="])
+	except GetoptError:
+		usage(sys.argv[0])
+		return 1
+
+	try:
+		regs = parse_config(conf)
+
+	except ConfigurationError, e:
+		print "Error parsing configuration file %s:\n\t%s" % \
+			(e.file, e.message)
+		return 1
+
+	for o, a in opts:
+		if o in ("-h", "--help"):
+			usage(sys.argv[0])
+			return
+
+		if o in ("-l", "--list"):
+			list_regs(regs)
+			return
+
+		if o in ("-s", "--search"):
+			list_regs(search_regs(regs, a))
+			return
+
+
+	if not args:
+		usage(sys.argv[0])
+		return 1
+
+	a = args.pop(0)
+	if not regs.has_key(a):
+		print "No such register '%s'. Valid regs are:" % a
+		list_regs(regs)
+		return 1
+
+	r = regs[a]
+	print "decoding as %s" % r.name
+
+	if args:
+		values = args
+	else:
+		try:
+			values = sys.stdin.readlines()
+		except KeyboardInterrupt, e:
+			return
+
+	for value in values:
+		i = long(value.strip(), 0)
+		print r.decode(i)
+
+	return 0
+
+if __name__ == "__main__":
+	sys.exit(main())
