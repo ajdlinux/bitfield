@@ -226,7 +226,7 @@ def decode_value(reg, value, options):
 			"for %d-bit register '%s'") % (value, reg.width, reg.id)
 		return
 
-	print reg.decode(i, options.has_key('non_zero'))
+	print reg.decode(i, options['non-zero'])
 
 
 def main():
