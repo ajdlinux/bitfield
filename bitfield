@@ -77,13 +77,15 @@ class register:
 		self.width = width
 		self.fields = []
 
-	def add_field(self, field,):
+	def add_field(self, field):
 		self.fields.append(field)
 
 	def decode(self, value, ignore_zero):
 		field_width = (self.width + 3) / 4
 		name_width = max(map(lambda f: len(f.name), self.fields))
+
 		str = "0x%0*lx [%d]\n" % (field_width, value, value)
+
 		for field in self.fields:
 			v = field.mask(self.width, value);
 			if ignore_zero and v == 0:
