@@ -19,28 +19,28 @@ configs = [os.path.join(os.getenv("HOME"), ".bitfields.conf"),
 		os.path.join(os.getenv("HOME"), ".bitfields.d")]
 
 class bitfield:
-	def __init__(self, start_bit, end_bit, name):
-		self.start_bit = start_bit
-		self.end_bit = end_bit
+	def __init__(self, bits, name):
+		self.bits = bits
 		self.name = name
 		self.values = {}
 
-	def start_bit(self):
-		return self.start_bit
-
-	def end_bit(self):
-		return self.end_bit
-
 	def width(self):
-		return 1 + self.end_bit - self.start_bit
+		return len(self.bits)
 
 	def add_value(self, value, description):
 		self.values[int(value)] = description
 
 	def mask(self, reg_width, value):
-		shift = (reg_width - 1) - self.end_bit
-		return (((2 ** self.width() - 1) << (shift))
-			& value) >> shift
+		ret = 0
+		out_len = len(self.bits)
+		for out_bit in range(0, out_len):
+			in_bit = self.bits[out_bit]
+			# shift this bit down to the LSB (and mask the rest)
+			i = (value >> (reg_width - in_bit - 1)) & 1
+			# shift back to the output position in the field
+			i <<= out_len - out_bit - 1
+			ret |= i
+		return ret
 
 	def value(self, value):
 		if value in self.values:
@@ -54,14 +54,15 @@ class bitfield:
 			return None
 		(range_str, name) = a
 
-		range = (None,None)
-		if range_str.find(':') != -1:
-			r = range_str.split(":")
-			range = (int(r[0]),int(r[1]))
-		else:
-			range = (int(range_str),int(range_str))
-
-		return bitfield(range[0], range[1], name)
+		bits = []
+		for s in range_str.split(','):
+			if ':' in s:
+				(start, end) = s.split(':')
+				bits.extend(range(int(start), int(end) + 1, 1))
+			else:
+				bits.append(int(s))
+ 
+		return bitfield(bits, name)
 
 	@staticmethod
 	def parse_value(line):
