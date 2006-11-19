@@ -112,7 +112,7 @@ class ConfigurationError(Exception):
 def parse_config(bnf, regs, file):
 	f = open(file)
 
-	tokens = bnf.parseString(f.read()))
+	tokens = bnf.parseString(f.read())
 
 	for tok in tokens:
 		ts = tok.asList()
