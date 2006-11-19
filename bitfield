@@ -208,7 +208,7 @@ def parse_all_configs(configs):
 	return regs
 
 def usage(prog):
-	print "Usage: %s <-l> | <-s pattern> | register [value...]" % prog
+	print "Usage: %s <-l> | <-s pattern> | [-n] register [value...]" % prog
 
 def main():
 	try:
