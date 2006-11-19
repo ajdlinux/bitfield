@@ -47,10 +47,6 @@ class bitfield:
 			return self.values[value]
 		return None
 
-	def __str__(self):
-		return "[%2d:%-2d] %s 0x%x" % (int(self.start_bit),
-			int(self.end_bit), self.name, self.mask())
-
 	@staticmethod
 	def parse_bitfield(line):
 		a = line.split(None, 1)
@@ -96,12 +92,6 @@ class register:
 			else:
 				str += "%*s: 0x%x\n" \
 					% (name_width, field.name, v)
-		return str
-
-	def __str__(self):
-		str = self.name + "\n"
-		for f in self.fields:
-			str += "\t%s\n" % f
 		return str
 
 def list_regs(regs):
