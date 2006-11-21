@@ -130,6 +130,7 @@ def parse_config(bnf, regs, file):
 		# default to 64 bit registers
 		width = 64
 		name = None
+		alias_id = None
 		fields = []
 
 		for t in ts:
@@ -154,6 +155,22 @@ def parse_config(bnf, regs, file):
 						"Invalid value in %s" % id)
 
 				fields[-1].add_value(v[0], v[1])
+			elif t[0] == 'alias':
+				alias_id = t[1].strip()
+
+		if alias_id is not None:
+			if name is not None or fields != []:
+				raise ConfigurationError(file, ("Definiton " \
+					+ "for %s is an alias, but has other " \
+					+ "attributes") % id)
+
+			if not regs.has_key(alias_id):
+				raise ConfigurationError(file, "Aliasing "
+					"non-existent register %s (from %s)" \
+					% (alias_id, id))
+
+			regs[id] = regs[alias_id]
+			continue
 
 		if name is None or name == '':
 			raise ConfigurationError(file,
