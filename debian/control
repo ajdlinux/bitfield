@@ -1,17 +1,19 @@
 Source: bitfield
-Section: unknown
+Section: utils
 Priority: optional
 Maintainer: Michael Neuling <mikey@neuling.org>
-Build-Depends: debhelper (>= 5)
+Build-Depends: cdbs, debhelper (>= 5)
 Standards-Version: 3.7.2
 
 Package: bitfield
 Architecture: all
 Depends: python, python-pyparsing, bitfield-data
-Description: Break regsiters down into their bit fields
- Break regsiters down into their bit fields
+Description: Utility for decoding register values
+ The 'bitfield' program allows easy decoding of hardware registers
+ (or any value that can be broken down into separate bits).
 
 Package: bitfield-data
 Architecture: all
-Description: Data for bitfield
- Data for bitfield
+Description: Configuration data for the bitfield utility
+ Configuration for the bitfield utility. Currently contains definitions
+ for PowerPC and Cell registers
