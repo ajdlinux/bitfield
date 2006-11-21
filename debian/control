@@ -1,0 +1,17 @@
+Source: bitfield
+Section: unknown
+Priority: optional
+Maintainer: Michael Neuling <mikey@neuling.org>
+Build-Depends: debhelper (>= 5)
+Standards-Version: 3.7.2
+
+Package: bitfield
+Architecture: all
+Depends: python, python-pyparsing, bitfield-data
+Description: Break regsiters down into their bit fields
+ Break regsiters down into their bit fields
+
+Package: bitfield-data
+Architecture: all
+Description: Data for bitfield
+ Data for bitfield

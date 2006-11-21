@@ -1,0 +1,13 @@
+#!/usr/bin/make -f
+
+include /usr/share/cdbs/1/rules/debhelper.mk
+include /usr/share/cdbs/1/class/makefile.mk
+
+#DEB_MAKE_CLEAN_TARGET   = clean
+#DEB_MAKE_BUILD_TARGET   = all
+DEB_MAKE_INSTALL_TARGET = install DESTDIR=$(CURDIR)/debian/tmp/
+# no check for this software
+DEB_MAKE_CHECK_TARGET   =
+
+# example when changing environment variables is necessary
+#DEB_MAKE_ENVVARS        = CFLAGS="-pwet"

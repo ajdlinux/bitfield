@@ -1,0 +1,6 @@
+bitfield (0.0.1-1) unstable; urgency=low
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- Michael Neuling <mikey@neuling.org>  Tue, 21 Nov 2006 10:16:23 +1100
+
