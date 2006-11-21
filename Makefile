@@ -1,28 +1,42 @@
-INSTALLDIR=/usr/bin
-VERSION="0.0.1"
-SOURCES=bitfield bitfield-completions.sh bitfield.vim Makefile
-DEBSOURCES=bitfield.install bitfield-data.install changelog control rules
-CONFS=cell.conf powerpc.conf
+package=bitfield
+version=0.1
+pkg_ver=$(package)-$(version)
 
-all: 
+prefix=/usr/local
+bindir=$(prefix)/bin
+sysconfdir=$(prefix)/etc
+sharedir=$(prefix)/share
+
+sources=bitfield bitfield-completions.sh bitfield.vim Makefile
+deb_meta=bitfield.install bitfield-data.install changelog control rules
+configs=cell.conf powerpc.conf
+
+all:
+
+install:
+	install -d $(DESTDIR)$(bindir)
+	install -d $(DESTDIR)$(sysconfdir)/bash_completion.d
+	install -d $(DESTDIR)$(sharedir)/vim/addons/syntax
+	install -d $(DESTDIR)$(sysconfdir)/bitfield.d
+	install -m 755 -t $(DESTDIR)$(bindir) bitfield
+	install -m 644 -D bitfield-completions.sh \
+		$(DESTDIR)$(sysconfdir)/bash_completion.d/bitfield
+	install -m 644 -t $(DESTDIR)$(sharedir)/vim/addons/syntax bitfield.vim
+	install -m 644 -t $(DESTDIR)$(sysconfdir)/bitfield.d \
+		$(foreach f,$(configs),conf/$(f))
 
 clean:
-	rm -rf bitfield-${VERSION}
 
-install: 
-	install -d ${DESTDIR}${INSTALLDIR}
-	install -d ${DESTDIR}/etc/bash_completion.d
-	install -d ${DESTDIR}/usr/share/vim/addons/syntax
-	install -d ${DESTDIR}/etc/bitfield.d
-	install -m 755 -t ${DESTDIR}${INSTALLDIR} bitfield 
-	install -m 644 -D bitfield-completions.sh ${DESTDIR}/etc/bash_completion.d/bitfield
-	install -m 644 -t ${DESTDIR}/usr/share/vim/addons/syntax bitfield.vim
-	install -m 644 -t ${DESTDIR}/etc/bitfield.d $(foreach f,$(CONFS),conf/$(f))
+distclean: clean
+	rm -rf $(pkg_ver)
 
-dist: clean
-	mkdir -p bitfield-${VERSION}/debian
-	mkdir -p bitfield-${VERSION}/conf
-	cp -a ${SOURCES} bitfield-${VERSION}
-	cp -a $(foreach f,$(DEBSOURCES),debian/$(f)) bitfield-${VERSION}/debian
-	cp -a $(foreach f,$(CONFS),conf/$(f)) bitfield-${VERSION}/conf
-	tar zcvf bitfield-${VERSION}.tar.gz bitfield-${VERSION}
+dist: $(pkg_ver).tar.gz
+
+$(pkg_ver).tar.gz: $(pkg_ver)
+	tar zcvf $@ $^
+
+$(pkg_ver): clean
+	mkdir -p $@ $@/debian $@/conf
+	cp -a $(sources) $@
+	cp -a $(foreach f,$(deb_meta),debian/$(f)) $@/debian
+	cp -a $(foreach f,$(configs),conf/$(f)) $@/conf
