@@ -35,7 +35,7 @@ dist: $(pkg_ver).tar.gz
 $(pkg_ver).tar.gz: $(pkg_ver)
 	tar zcvf $@ $^
 
-$(pkg_ver): clean
+$(pkg_ver): distclean
 	mkdir -p $@ $@/debian $@/conf
 	cp -a $(sources) $@
 	cp -a $(foreach f,$(deb_meta),debian/$(f)) $@/debian
