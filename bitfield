@@ -15,9 +15,9 @@ from getopt import getopt, GetoptError
 
 # List of paths to look for configuration files. If a directory is specified,
 # it will be (recursively) scanned for .conf files.
-configs = [os.path.join(os.getenv("HOME"), ".bitfield.conf"),
+configs = ["/etc/bitfield.d", "/etc/bitfield",
 		os.path.join(os.getenv("HOME"), ".bitfield.d"),
-		"/etc/bitfield.d", "/etc/bitfield", ]
+		os.path.join(os.getenv("HOME"), ".bitfield.conf")]
 
 class bitfield:
 	def __init__(self, bits, name):
