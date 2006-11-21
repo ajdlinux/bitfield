@@ -7,7 +7,7 @@ bindir=$(prefix)/bin
 sysconfdir=$(prefix)/etc
 sharedir=$(prefix)/share
 
-sources=bitfield bitfield-completions.sh bitfield.vim Makefile
+sources=bitfield bitfield-completions.sh bitfield.vim Makefile ChangeLog
 deb_meta=bitfield.install bitfield-data.install changelog control rules
 configs=cell.conf powerpc.conf
 

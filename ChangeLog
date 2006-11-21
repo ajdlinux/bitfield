@@ -1,0 +1,15 @@
+version 0.2:
+	* Add support for aliased definitions.
+	* Reorder configuration file reading order.
+	* Debianize
+	* Add bash completion definitions
+	* Add vim syntax highlighting definition
+	* Add configuration files for powerpc and cell
+	* Add support for non-contiguous bitfields.
+	* Allow progressive parsing of stdin
+	* More error checking
+	* Add -n option to suppress non-zero fields
+	* Add support for multiple config files & directories
+
+version 0.1:
+	* initial website release, no offical v0.1
