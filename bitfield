@@ -49,6 +49,15 @@ class bitfield:
 		return None
 
 	@staticmethod
+	def mask_and_shift_to_bits(width, mask, shift):
+		bits = []
+		val = mask << shift
+		for i in range(0, width):
+			if mask & (1 << i):
+				bits.append(width - i - 1 - shift)
+		return bits
+
+	@staticmethod
 	def parse_bitfield(line, reg):
 		a = line.split(None, 1)
 		if len(a) != 2:
@@ -58,14 +67,23 @@ class bitfield:
 		bits = []
 		for s in range_str.split(','):
 			if ':' in s:
-				(start, end) = s.split(':')
+				(start, end) = map( \
+					lambda s: reg.bit_number(int(s)),
+					s.split(':'))
 				start = reg.bit_number(int(start))
 				end = reg.bit_number(int(end))
 				bits.extend(range(start, end + 1, 1))
+			elif '<<' in s:
+				(mask, shift) = map(lambda s: int(s.strip()),
+					s.split('<<'))
+				bits.extend(bitfield.mask_and_shift_to_bits( \
+					reg.width, mask, shift))
 			else:
 				bits.append(reg.bit_number(int(s)))
  
 		return bitfield(bits, name)
+
+
 
 	@staticmethod
 	def parse_value(line):
