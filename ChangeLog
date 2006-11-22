@@ -1,3 +1,6 @@
+version ??
+	* Allow alternate (bit 0 is lsb) bit numbering scheme
+
 version 0.2:
 	* Add support for aliased definitions.
 	* Reorder configuration file reading order.
