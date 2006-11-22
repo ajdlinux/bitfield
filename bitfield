@@ -49,7 +49,7 @@ class bitfield:
 		return None
 
 	@staticmethod
-	def parse_bitfield(line):
+	def parse_bitfield(line, reg):
 		a = line.split(None, 1)
 		if len(a) != 2:
 			return None
@@ -59,9 +59,11 @@ class bitfield:
 		for s in range_str.split(','):
 			if ':' in s:
 				(start, end) = s.split(':')
-				bits.extend(range(int(start), int(end) + 1, 1))
+				start = reg.bit_number(int(start))
+				end = reg.bit_number(int(end))
+				bits.extend(range(start, end + 1, 1))
 			else:
-				bits.append(int(s))
+				bits.append(reg.bit_number(int(s)))
  
 		return bitfield(bits, name)
 
@@ -73,11 +75,16 @@ class bitfield:
 		return a
 
 class register:
-	def __init__(self, id, name, width):
+	bit_0_is_msb = 0
+	bit_0_is_lsb = 1
+
+	def __init__(self, id):
 		self.id = id
-		self.name = name
-		self.width = width
 		self.fields = []
+		# set defaults
+		self.name = None
+		self.bit_order = self.bit_0_is_msb
+		self.width = 64
 
 	def add_field(self, field):
 		self.fields.append(field)
@@ -100,6 +107,11 @@ class register:
 				str += "%*s: 0x%x\n" \
 					% (name_width, field.name, v)
 		return str
+	
+	def bit_number(self, number):
+		if self.bit_order == self.bit_0_is_lsb:
+			number = self.width - 1 - number
+		return number
 
 def list_regs(regs):
 	for (id, r) in regs.iteritems():
@@ -119,6 +131,11 @@ def parse_config(bnf, regs, file):
 
 	tokens = bnf.parseString(f.read())
 
+	order_map = {'bit-0-is-lsb':	register.bit_0_is_lsb,
+			'bit-0-is-msb':	register.bit_0_is_msb,
+			'ibm':		register.bit_0_is_msb,
+			'default':	register.bit_0_is_msb}
+
 	for tok in tokens:
 		ts = tok.asList()
 		id = ts.pop(0)
@@ -127,20 +144,19 @@ def parse_config(bnf, regs, file):
 			raise ConfigurationError(file,
 				"Register %s is already defined" % id)
 
-		# default to 64 bit registers
-		width = 64
-		name = None
+		reg = register(id)
+
 		alias_id = None
 		fields = []
 
 		for t in ts:
 			if t[0] == 'name':
 				name = t[1]
-				name = name.strip()
+				reg.name = name.strip()
 			elif t[0] == 'width':
-				width = int(t[1])
+				reg.width = int(t[1])
 			elif t[0] == 'field':
-				f = bitfield.parse_bitfield(t[1])
+				f = bitfield.parse_bitfield(t[1], reg)
 				if f is None:
 					raise ConfigurationError(file,
 						"Invalid field in %s" % id)
@@ -155,11 +171,24 @@ def parse_config(bnf, regs, file):
 						"Invalid value in %s" % id)
 
 				fields[-1].add_value(v[0], v[1])
+			elif t[0] == 'order':
+				if len(fields) != 0:
+					raise ConfigurationError(file,
+						("bit order defined after " \
+						+ "fields in %s") % id)
+
+				order_str = t[1].strip().lower()
+				if order_str not in order_map.keys():
+					raise ConfigurationError(file,
+						"Invalid bit order %s in %s" % \
+						(order_str, id))
+				reg.bit_order = order_map[order_str]
+				
 			elif t[0] == 'alias':
 				alias_id = t[1].strip()
 
 		if alias_id is not None:
-			if name is not None or fields != []:
+			if reg.name is not None or fields != []:
 				raise ConfigurationError(file, ("Definiton " \
 					+ "for %s is an alias, but has other " \
 					+ "attributes") % id)
@@ -169,10 +198,10 @@ def parse_config(bnf, regs, file):
 					"non-existent register %s (from %s)" \
 					% (alias_id, id))
 
-			regs[id] = regs[alias_id]
+			reg = regs[alias_id]
 			continue
 
-		if name is None or name == '':
+		if reg.name is None or reg.name == '':
 			raise ConfigurationError(file,
 				"No name for entry %s" % id)
 
@@ -180,11 +209,10 @@ def parse_config(bnf, regs, file):
 			raise ConfigurationError(file,
 				"Register %s has no fields" % id)
 
-		r = register(id, name, width)
 		for f in fields:
-			r.add_field(f)
+			reg.add_field(f)
 
-		regs[id] = r
+		regs[id] = reg
 
 def parse_config_dir(data, dir, fnames):
 	(bnf, regs) = data
