@@ -178,6 +178,8 @@ def parse_config(bnf, regs, file):
 						+ "fields in %s") % id)
 
 				order_str = t[1].strip().lower()
+				order_str = order_str.replace(' ', '-')
+
 				if order_str not in order_map.keys():
 					raise ConfigurationError(file,
 						"Invalid bit order %s in %s" % \
