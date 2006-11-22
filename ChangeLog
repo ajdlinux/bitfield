@@ -1,6 +1,7 @@
 version ??
 	* Allow alternate (bit 0 is lsb) bit numbering scheme
 	* Add support for mask<<shift field definitions
+	* Add configuration for a few radeon registers
 
 version 0.2:
 	* Add support for aliased definitions.
