@@ -1,2 +1,3 @@
 debian/tmp/etc/bitfield.d/cell.conf
 debian/tmp/etc/bitfield.d/powerpc.conf
+debian/tmp/etc/bitfield.d/radeon.conf
