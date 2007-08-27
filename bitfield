@@ -80,7 +80,7 @@ class bitfield:
 					reg.width, mask, shift))
 			else:
 				bits.append(reg.bit_number(int(s)))
- 
+
 		return bitfield(bits, name)
 
 
@@ -125,7 +125,7 @@ class register:
 				str += "%*s: 0x%x\n" \
 					% (name_width, field.name, v)
 		return str
-	
+
 	def bit_number(self, number):
 		if self.bit_order == self.bit_0_is_lsb:
 			number = self.width - 1 - number
@@ -203,7 +203,7 @@ def parse_config(bnf, regs, file):
 						"Invalid bit order %s in %s" % \
 						(order_str, id))
 				reg.bit_order = order_map[order_str]
-				
+
 			elif t[0] == 'alias':
 				alias_id = t[1].strip()
 
@@ -349,7 +349,7 @@ def main():
 		value_iter = args.__iter__()
 	else:
 		value_iter = iter(sys.stdin.readline, '')
-		
+
 	try:
 		for value in value_iter:
 			decode_value(reg, value.strip(), options)
