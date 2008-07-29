@@ -29,7 +29,7 @@ class bitfield:
 		return len(self.bits)
 
 	def add_value(self, value, description):
-		self.values[int(value)] = description
+		self.values[int(value, 0)] = description
 
 	def mask(self, reg_width, value):
 		ret = 0
