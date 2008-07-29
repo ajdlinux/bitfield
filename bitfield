@@ -54,7 +54,7 @@ class bitfield:
 		val = mask << shift
 		for i in range(0, width):
 			if mask & (1 << i):
-				bits.append(width - i - 1 - shift)
+				bits.insert(0, width - i - 1 - shift)
 		return bits
 
 	@staticmethod
