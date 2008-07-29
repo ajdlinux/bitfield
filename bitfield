@@ -1,4 +1,4 @@
-#!/usr/bin/python2.4
+#!/usr/bin/env python
 #
 # Utility to decode register values
 # Copyright (c) 2006 Jeremy Kerr <jk@ozlabs.org>
