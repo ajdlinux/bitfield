@@ -58,6 +58,10 @@ class bitfield:
 		return bits
 
 	@staticmethod
+	def mask_to_bits(width, mask):
+		return bitfield.mask_and_shift_to_bits(width, mask, 0)
+
+	@staticmethod
 	def parse_bitfield(line, reg):
 		a = line.split(None, 1)
 		if len(a) != 2:
@@ -78,6 +82,10 @@ class bitfield:
 					s.split('<<'))
 				bits.extend(bitfield.mask_and_shift_to_bits( \
 					reg.width, mask, shift))
+			elif s.startswith('&'):
+				mask = int(s[1:], 0)
+				bits.extend(bitfield.mask_to_bits(reg.width, \
+							mask))
 			else:
 				bits.append(reg.bit_number(int(s)))
 
