@@ -76,10 +76,11 @@ class bitfield:
 		bits = []
 		for s in range_str.split(','):
 			if ':' in s:
-				(start, end) = map( \
-					lambda s: reg.bit_number(int(s)),
-					s.split(':'))
-				bits.extend(range(start, end - 1, -1))
+				bounds = [reg.bit_number(int(n))
+					  for n in s.split(':', 1)]
+				start = min(bounds)
+				end = max(bounds)
+				bits.extend(range(start, end + 1))
 			elif '<<' in s:
 				(mask, shift) = map(lambda s: int(s.strip()),
 					s.split('<<'))
