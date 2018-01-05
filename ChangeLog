@@ -1,3 +1,8 @@
+version 0.4:
+	* Python 3 support
+	* Octal literals in bitfield values must now be expressed with the
+	  "0o" prefix rather than just a "0" prefix
+
 version 0.3:
 	* New maintainer
 	* Add README and licence files

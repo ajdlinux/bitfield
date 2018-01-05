@@ -82,8 +82,8 @@ class bitfield:
 				end = max(bounds)
 				bits.extend(range(start, end + 1))
 			elif '<<' in s:
-				(mask, shift) = map(lambda s: int(s.strip()),
-					s.split('<<'))
+				(mask, shift) = [int(s.strip())
+                                                 for s in s.split('<<')]
 				bits.extend(bitfield.mask_and_shift_to_bits( \
 					reg.width, mask, shift))
 			elif s.startswith('&'):
@@ -120,8 +120,8 @@ class register:
 		self.fields.append(field)
 
 	def decode(self, value, ignore_zero):
-		field_width = (self.width + 3) / 4
-		name_width = max(map(lambda f: len(f.name), self.fields))
+		field_width = (self.width + 3) // 4
+		name_width = max([len(f.name) for f in self.fields])
 
 		str = "0x%0*lx [%d]\n" % (field_width, value, value)
 
@@ -144,8 +144,8 @@ class register:
 		return number
 
 def list_regs(regs):
-	for (id, r) in regs.iteritems():
-		print "%18s : %s" % (id, r.name)
+	for (id, r) in regs.items():
+		print("%18s : %s" % (id, r.name))
 
 def search_regs(regs, str):
 	return dict((k, regs[k]) for k in regs \
@@ -170,7 +170,7 @@ def parse_config(bnf, regs, file):
 		ts = tok.asList()
 		id = ts.pop(0)
 
-		if regs.has_key(id):
+		if id in regs:
 			raise ConfigurationError(file,
 				"Register %s is already defined" % id)
 
@@ -210,7 +210,7 @@ def parse_config(bnf, regs, file):
 				order_str = t[1].strip().lower()
 				order_str = order_str.replace(' ', '-')
 
-				if order_str not in order_map.keys():
+				if order_str not in order_map:
 					raise ConfigurationError(file,
 						"Invalid bit order %s in %s" % \
 						(order_str, id))
@@ -225,7 +225,7 @@ def parse_config(bnf, regs, file):
 					+ "for %s is an alias, but has other " \
 					+ "attributes") % id)
 
-			if not regs.has_key(alias_id):
+			if alias_id not in regs:
 				raise ConfigurationError(file, "Aliasing "
 					"non-existent register %s (from %s)" \
 					% (alias_id, id))
@@ -250,9 +250,6 @@ def parse_config_dir(data, dir, fnames):
 	(bnf, regs) = data
 	for fname in fnames:
 		full_fname = os.path.join(dir, fname)
-
-		if os.path.isdir(full_fname):
-			continue
 
 		if fname.endswith('.conf'):
 			parse_config(bnf, regs, full_fname)
@@ -284,27 +281,28 @@ def parse_all_configs(configs):
 		if not os.path.exists(conf):
 			continue
 		if os.path.isdir(conf):
-			os.path.walk(conf, parse_config_dir, conf_data)
+			for dirpath, dirnames, filenames in os.walk(conf):
+				parse_config_dir(conf_data, dirpath, filenames)
 		else:
 			parse_config(bnf, regs, conf)
 	return regs
 
 def usage(prog):
-	print "Usage: %s <-l> | <-s pattern> | [-n] register [value...]" % prog
+	print("Usage: %s <-l> | <-s pattern> | [-n] register [value...]" % prog)
 
 def decode_value(reg, value, options):
 	try:
-		i = long(value, 0)
-	except ValueError, e:
-		print "error: invalid value '%s'" % value
+		i = int(value, 0)
+	except ValueError as e:
+		print("error: invalid value '%s'" % value)
 		return
 
 	if i > ((1 << reg.width) - 1):
-		print ("error: value '%s' is too large " + \
-			"for %d-bit register '%s'") % (value, reg.width, reg.id)
+		print(("error: value '%s' is too large " + \
+			"for %d-bit register '%s'") % (value, reg.width, reg.id))
 		return
 
-	print reg.decode(i, options['non-zero'])
+	print(reg.decode(i, options['non-zero']))
 
 
 def main():
@@ -317,13 +315,13 @@ def main():
 
 	try:
 		regs = parse_all_configs(configs)
-	except ConfigurationError, e:
-		print "Error parsing configuration file %s:\n\t%s" % \
-			(e.file, e.message)
+	except ConfigurationError as e:
+		print("Error parsing configuration file %s:\n\t%s" % \
+			(e.file, e.message))
 		return 1
 
 	if regs == {}:
-		print "No configuration available"
+		print("No configuration available")
 		return 1
 
 	options = {}
@@ -350,12 +348,12 @@ def main():
 		return 1
 
 	reg_id = args.pop(0)
-	if not regs.has_key(reg_id):
-		print "No such register '%s'" % reg_id
+	if reg_id not in regs:
+		print("No such register '%s'" % reg_id)
 		return 1
 
 	reg = regs[reg_id]
-	print "decoding as %s" % reg.name
+	print("decoding as %s" % reg.name)
 
 	if args:
 		value_iter = args.__iter__()
@@ -365,7 +363,7 @@ def main():
 	try:
 		for value in value_iter:
 			decode_value(reg, value.strip(), options)
-	except KeyboardInterrupt, e:
+	except KeyboardInterrupt as e:
 		pass
 
 	return 0
