@@ -1,8 +1,14 @@
-version ??
+version 0.3:
+	* New maintainer
+	* Add README and licence files
 	* Add support for &mask syntax
 	* Allow alternate (bit 0 is lsb) bit numbering scheme
 	* Add support for mask<<shift field definitions
 	* Add configuration for a few radeon registers
+	* Various updates/additions to powerpc registers
+	* Add support for hex/octal literals in bitfield values
+	* Remove debian/ directory in preparation for a proper, compliant
+	  package
 
 version 0.2:
 	* Add support for aliased definitions.

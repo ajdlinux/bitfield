@@ -1,5 +1,5 @@
 package=bitfield
-version=0.2
+version=0.3
 pkg_ver=$(package)-$(version)
 
 prefix=/usr/local
