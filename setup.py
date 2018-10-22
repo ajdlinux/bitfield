@@ -45,7 +45,7 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'bitfield=bitfield.bitfield:main',
+            'bitfield=bitfield.__main__:main',
         ],
     },
 
